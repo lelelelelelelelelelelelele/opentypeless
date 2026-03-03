@@ -18,7 +18,8 @@ export function LlmPane() {
 
   const isCloud = config.llm_provider === 'cloud'
 
-  const [models, setModels] = useState<string[]>([])
+  const models = useAppStore((s) => s.llmModels)
+  const setModels = useAppStore((s) => s.setLlmModels)
   const [fetchingModels, setFetchingModels] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -29,17 +30,19 @@ export function LlmPane() {
       const list = await fetchLlmModels(apiKey, baseUrl)
       setModels(list)
     } catch {
-      setModels([])
+      // Do not clear existing cache on failure — avoids infinite retry loop
+      // (clearing would re-trigger the useEffect that checks models.length > 0)
     } finally {
       setFetchingModels(false)
     }
-  }, [])
+  }, [setModels])
 
-  // Auto-fetch when API key changes (debounced)
+  // Auto-fetch when API key or base URL changes (debounced); skips if models already cached
   useEffect(() => {
     if (isCloud) return
-    if (debounceRef.current) clearTimeout(debounceRef.current)
     if (!config.llm_api_key || !config.llm_base_url) return
+    if (models.length > 0) return
+    if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       doFetchModels(config.llm_api_key, config.llm_base_url)
     }, 500)
@@ -49,7 +52,7 @@ export function LlmPane() {
         debounceRef.current = null
       }
     }
-  }, [config.llm_api_key, config.llm_base_url, doFetchModels, isCloud])
+  }, [config.llm_api_key, config.llm_base_url, doFetchModels, isCloud, models.length])
 
   const handleTest = async () => {
     setLlmTestStatus('testing')

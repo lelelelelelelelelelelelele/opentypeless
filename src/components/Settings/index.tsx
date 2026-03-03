@@ -47,14 +47,14 @@ export function Settings() {
 
           {/* Pane content */}
           <div className="flex-1 overflow-y-auto px-6 py-5">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="sync">
               <motion.div
                 key={activePane}
                 className="w-full"
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.97 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.1, ease: 'easeOut' }}
               >
                 {activePane === 'general' && <GeneralPane />}
                 {activePane === 'stt' && <SttPane />}

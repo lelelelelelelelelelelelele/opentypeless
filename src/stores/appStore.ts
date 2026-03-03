@@ -119,6 +119,10 @@ interface AppState {
   llmTestStatus: TestStatus
   setLlmTestStatus: (s: TestStatus) => void
 
+  // LLM model list cache (persists across tab switches)
+  llmModels: string[]
+  setLlmModels: (models: string[]) => void
+
   // Pipeline error
   pipelineError: string | null
   setPipelineError: (error: string | null) => void
@@ -202,6 +206,9 @@ export const useAppStore = create<AppState>((set) => ({
   setSttTestStatus: (sttTestStatus) => set({ sttTestStatus }),
   llmTestStatus: 'idle',
   setLlmTestStatus: (llmTestStatus) => set({ llmTestStatus }),
+
+  llmModels: [],
+  setLlmModels: (llmModels) => set({ llmModels }),
 
   pipelineError: null,
   setPipelineError: (pipelineError) => set({ pipelineError }),
