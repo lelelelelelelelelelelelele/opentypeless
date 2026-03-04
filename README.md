@@ -27,7 +27,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/voice-flow-demo.gif" width="720" alt="OpenTypeless Demo" />
+  <img src="docs/images/demo.gif" width="720" alt="OpenTypeless Demo" />
 </p>
 
 <details>
