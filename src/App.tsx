@@ -21,35 +21,18 @@ function CapsuleApp() {
   useTheme()
 
   const setConfig = useAppStore((s) => s.setConfig)
-  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     // Load config so DurationTimer gets the correct max_recording_seconds
     getConfig().then(setConfig).catch((e) => {
       console.error('Failed to load config in capsule:', e)
     })
-
-    // Let React paint first, then show the window
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        import('@tauri-apps/api/window')
-          .then(async ({ getCurrentWindow }) => {
-            await getCurrentWindow().show()
-            setReady(true)
-          })
-          .catch((e: unknown) => {
-            console.error('Failed to show window:', e)
-          })
-      })
-    })
   }, [setConfig])
 
-  // Always render Capsule so it paints before window shows
-  return (
-    <div style={{ opacity: ready ? 1 : 0 }}>
-      <Capsule />
-    </div>
-  )
+  // Window show is handled by useCapsuleResize (setSize → setPosition → show),
+  // which works on both Windows and macOS. The previous rAF-based show approach
+  // failed on macOS because WKWebView pauses requestAnimationFrame in hidden windows.
+  return <Capsule />
 }
 
 function MainApp() {
