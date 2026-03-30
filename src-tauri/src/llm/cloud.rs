@@ -46,7 +46,9 @@ impl LlmProvider for CloudLlmProvider {
             .as_ref()
             .is_some_and(|s| !s.trim().is_empty());
 
-        let system_prompt = prompt::build_system_prompt(
+        // Build V2-XML format user prompt
+        let user_prompt = prompt::build_user_prompt(
+            &req.raw_text,
             req.app_type,
             &req.dictionary,
             req.translate_enabled,
@@ -54,14 +56,7 @@ impl LlmProvider for CloudLlmProvider {
             has_selected_text,
         );
 
-        let mut messages = vec![serde_json::json!({ "role": "system", "content": system_prompt })];
-        if has_selected_text {
-            messages.push(serde_json::json!({
-                "role": "user",
-                "content": format!("[Selected Text]\n{}", req.selected_text.as_ref().unwrap())
-            }));
-        }
-        messages.push(serde_json::json!({ "role": "user", "content": req.raw_text }));
+        let messages = prompt::build_messages(user_prompt, req.selected_text.as_deref());
 
         let api_base_url = crate::api_base_url();
 
@@ -148,5 +143,122 @@ impl LlmProvider for CloudLlmProvider {
 
     fn name(&self) -> &str {
         "Cloud"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::llm::test_support::spawn_json_server;
+    use crate::llm::AppType;
+    use std::sync::{Mutex, OnceLock};
+
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    fn test_config() -> LlmConfig {
+        LlmConfig {
+            api_key: "session-token".to_string(),
+            model: "cloud-model".to_string(),
+            base_url: "unused".to_string(),
+            max_tokens: 128,
+            temperature: 0.3,
+        }
+    }
+
+    fn test_request(selected_text: Option<&str>) -> PolishRequest {
+        PolishRequest {
+            raw_text: "翻译成英文".to_string(),
+            app_type: AppType::General,
+            dictionary: vec![],
+            translate_enabled: false,
+            target_lang: String::new(),
+            selected_text: selected_text.map(str::to_string),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_polish_sends_only_v2_xml_prompt_without_selected_text() {
+        let _guard = env_lock().lock().expect("env mutex");
+        let original = std::env::var("API_BASE_URL").ok();
+        let (base_url, rx) = spawn_json_server(r#"{"text":"ok"}"#);
+        std::env::set_var("API_BASE_URL", &base_url);
+
+        let provider = CloudLlmProvider::new();
+        let result = provider
+            .polish(&test_config(), &test_request(None), None)
+            .await;
+
+        match original {
+            Some(value) => std::env::set_var("API_BASE_URL", value),
+            None => std::env::remove_var("API_BASE_URL"),
+        }
+
+        result.expect("polish request should succeed");
+
+        let payload = rx.recv().expect("captured request payload");
+        let messages = payload["messages"].as_array().expect("messages array");
+        assert_eq!(messages.len(), 1);
+        let prompt = messages[0]["content"].as_str().expect("v2 xml prompt");
+        assert!(prompt.contains("<instructions>"));
+        assert!(prompt.contains("<transcript>"));
+        assert!(prompt.contains("翻译成英文"));
+    }
+
+    #[tokio::test]
+    async fn test_polish_sends_selected_text_as_separate_user_message() {
+        let _guard = env_lock().lock().expect("env mutex");
+        let original = std::env::var("API_BASE_URL").ok();
+        let (base_url, rx) = spawn_json_server(r#"{"text":"ok"}"#);
+        std::env::set_var("API_BASE_URL", &base_url);
+
+        let provider = CloudLlmProvider::new();
+        let result = provider
+            .polish(&test_config(), &test_request(Some("需要编辑的原文")), None)
+            .await;
+
+        match original {
+            Some(value) => std::env::set_var("API_BASE_URL", value),
+            None => std::env::remove_var("API_BASE_URL"),
+        }
+
+        result.expect("polish request should succeed");
+
+        let payload = rx.recv().expect("captured request payload");
+        let messages = payload["messages"].as_array().expect("messages array");
+        assert_eq!(messages.len(), 2);
+        assert_eq!(messages[0]["content"], "[Selected Text]\n需要编辑的原文");
+        let prompt = messages[1]["content"].as_str().expect("v2 xml prompt");
+        assert!(prompt.contains("SELECTED TEXT MODE"));
+        assert!(prompt.contains("翻译成英文"));
+    }
+
+    #[tokio::test]
+    async fn test_polish_ignores_blank_selected_text() {
+        let _guard = env_lock().lock().expect("env mutex");
+        let original = std::env::var("API_BASE_URL").ok();
+        let (base_url, rx) = spawn_json_server(r#"{"text":"ok"}"#);
+        std::env::set_var("API_BASE_URL", &base_url);
+
+        let provider = CloudLlmProvider::new();
+        let result = provider
+            .polish(&test_config(), &test_request(Some("   ")), None)
+            .await;
+
+        match original {
+            Some(value) => std::env::set_var("API_BASE_URL", value),
+            None => std::env::remove_var("API_BASE_URL"),
+        }
+
+        result.expect("polish request should succeed");
+
+        let payload = rx.recv().expect("captured request payload");
+        let messages = payload["messages"].as_array().expect("messages array");
+        assert_eq!(messages.len(), 1);
+        let prompt = messages[0]["content"].as_str().expect("v2 xml prompt");
+        assert!(!prompt.contains("[Selected Text]"));
+        assert!(!prompt.contains("SELECTED TEXT MODE"));
     }
 }

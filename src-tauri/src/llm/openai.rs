@@ -40,7 +40,9 @@ impl LlmProvider for OpenAiProvider {
             .as_ref()
             .is_some_and(|s| !s.trim().is_empty());
 
-        let system_prompt = prompt::build_system_prompt(
+        // Build V2-XML format user prompt
+        let user_prompt = prompt::build_user_prompt(
+            &req.raw_text,
             req.app_type,
             &req.dictionary,
             req.translate_enabled,
@@ -48,14 +50,7 @@ impl LlmProvider for OpenAiProvider {
             has_selected_text,
         );
 
-        let mut messages = vec![serde_json::json!({ "role": "system", "content": system_prompt })];
-        if has_selected_text {
-            messages.push(serde_json::json!({
-                "role": "user",
-                "content": format!("[Selected Text]\n{}", req.selected_text.as_ref().unwrap())
-            }));
-        }
-        messages.push(serde_json::json!({ "role": "user", "content": req.raw_text }));
+        let messages = prompt::build_messages(user_prompt, req.selected_text.as_deref());
 
         let mut body = serde_json::json!({
             "model": config.model,
@@ -185,5 +180,95 @@ impl LlmProvider for OpenAiProvider {
 
     fn name(&self) -> &str {
         "OpenAI"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::llm::test_support::spawn_json_server;
+    use crate::llm::AppType;
+
+    fn test_config(base_url: String) -> LlmConfig {
+        LlmConfig {
+            api_key: "test-key".to_string(),
+            model: "test-model".to_string(),
+            base_url,
+            max_tokens: 128,
+            temperature: 0.3,
+        }
+    }
+
+    fn test_request(selected_text: Option<&str>) -> PolishRequest {
+        PolishRequest {
+            raw_text: "帮我精简一下".to_string(),
+            app_type: AppType::General,
+            dictionary: vec![],
+            translate_enabled: false,
+            target_lang: String::new(),
+            selected_text: selected_text.map(str::to_string),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_polish_sends_only_v2_xml_prompt_without_selected_text() {
+        let (base_url, rx) = spawn_json_server(r#"{"choices":[{"message":{"content":"ok"}}]}"#);
+        let provider = OpenAiProvider::new();
+        let config = test_config(base_url);
+
+        provider
+            .polish(&config, &test_request(None), None)
+            .await
+            .expect("polish request should succeed");
+
+        let payload = rx.recv().expect("captured request payload");
+        let messages = payload["messages"].as_array().expect("messages array");
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0]["role"], "user");
+        let content = messages[0]["content"].as_str().expect("user prompt");
+        assert!(content.contains("<instructions>"));
+        assert!(content.contains("<transcript>"));
+        assert!(content.contains("帮我精简一下"));
+    }
+
+    #[tokio::test]
+    async fn test_polish_sends_selected_text_as_separate_user_message() {
+        let (base_url, rx) = spawn_json_server(r#"{"choices":[{"message":{"content":"ok"}}]}"#);
+        let provider = OpenAiProvider::new();
+        let config = test_config(base_url);
+
+        provider
+            .polish(&config, &test_request(Some("原始选中文本")), None)
+            .await
+            .expect("polish request should succeed");
+
+        let payload = rx.recv().expect("captured request payload");
+        let messages = payload["messages"].as_array().expect("messages array");
+        assert_eq!(messages.len(), 2);
+        assert_eq!(messages[0]["role"], "user");
+        assert_eq!(messages[0]["content"], "[Selected Text]\n原始选中文本");
+        let prompt = messages[1]["content"].as_str().expect("v2 xml prompt");
+        assert!(prompt.contains("<instructions>"));
+        assert!(prompt.contains("SELECTED TEXT MODE"));
+        assert!(prompt.contains("帮我精简一下"));
+    }
+
+    #[tokio::test]
+    async fn test_polish_ignores_blank_selected_text() {
+        let (base_url, rx) = spawn_json_server(r#"{"choices":[{"message":{"content":"ok"}}]}"#);
+        let provider = OpenAiProvider::new();
+        let config = test_config(base_url);
+
+        provider
+            .polish(&config, &test_request(Some("   ")), None)
+            .await
+            .expect("polish request should succeed");
+
+        let payload = rx.recv().expect("captured request payload");
+        let messages = payload["messages"].as_array().expect("messages array");
+        assert_eq!(messages.len(), 1);
+        let prompt = messages[0]["content"].as_str().expect("v2 xml prompt");
+        assert!(!prompt.contains("[Selected Text]"));
+        assert!(!prompt.contains("SELECTED TEXT MODE"));
     }
 }
