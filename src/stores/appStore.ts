@@ -68,7 +68,7 @@ export interface AppConfig {
 
 export type TestStatus = 'idle' | 'testing' | 'success' | 'error'
 
-interface AppState {
+export interface AppState {
   // Pipeline
   pipelineState: PipelineState
   setPipelineState: (state: PipelineState) => void
