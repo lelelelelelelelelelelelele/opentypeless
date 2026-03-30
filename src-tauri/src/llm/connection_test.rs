@@ -296,10 +296,10 @@ async fn test_tc003_real() {
 
 /// 辅助函数：使用项目默认的 V2-XML User Prompt 调用 LLM
 async fn call_llm_with_prompt(config: &LlmConfig, raw_text: &str) -> Result<String, String> {
-    use crate::llm::prompt::build_user_prompt;
+    use crate::llm::prompt::build_transcribe_prompt;
     use crate::llm::AppType;
 
-    let user_prompt = build_user_prompt(raw_text, AppType::General, &[], false, "", false);
+    let user_prompt = build_transcribe_prompt(raw_text, AppType::General, &[], false, "");
 
     let client = reqwest::Client::new();
     let url = format!("{}/chat/completions", config.base_url.trim_end_matches('/'));

@@ -102,7 +102,7 @@ async fn test_tc003_prompt_injection() {
 
 /// 辅助函数：调用 LLM polish
 async fn call_llm_polish(raw_text: &str) -> crate::llm::PolishResponse {
-    use crate::llm::prompt::build_user_prompt;
+    use crate::llm::prompt::build_transcribe_prompt;
 
     // 构建配置 - 使用默认配置，实际测试时需要从环境变量读取 API key
     let config = LlmConfig {
@@ -121,13 +121,12 @@ async fn call_llm_polish(raw_text: &str) -> crate::llm::PolishResponse {
     };
 
     // 打印使用的 User Prompt（用于调试）
-    let user_prompt = build_user_prompt(
+    let user_prompt = build_transcribe_prompt(
         &req.raw_text,
         req.app_type,
         &req.dictionary,
         req.translate_enabled,
         &req.target_lang,
-        req.selected_text.is_some(),
     );
     println!(
         "User Prompt preview: {}...",

@@ -60,3 +60,8 @@ IMPROVEMENTS.md
 docs/LLM_BUG_REPRODUCTION_REPORT.md
 docs/PROMPT_VERSIONS.md
 docs/SELECTED_TEXT_EVOLUTION.md
+
+# Design/planning docs (working drafts)
+docs/output-mode-impl-plan.md
+docs/output-mode-ui-design.md
+docs/plans/
