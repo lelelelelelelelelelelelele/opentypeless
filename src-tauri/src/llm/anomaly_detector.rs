@@ -2,7 +2,7 @@
 //!
 //! 检测 LLM 输出是否与原始转录差异过大，如果异常则触发二次纠正。
 
-use crate::llm::{PolishRequest, PolishResponse};
+// use crate::llm::{PolishRequest, PolishResponse};
 
 /// 差异检测结果
 #[derive(Debug, Clone)]

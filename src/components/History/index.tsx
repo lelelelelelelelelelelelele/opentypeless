@@ -13,7 +13,7 @@ export function History() {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [copiedId, setCopiedId] = useState<number | null>(null)
-  
+
   // Track expanded state for each entry
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
 
@@ -128,7 +128,7 @@ export function History() {
                 <div className="space-y-0.5">
                   {entries.map((entry) => {
                     const isExpanded = expandedIds.has(entry.id)
-                    
+
                     return (
                       <motion.div
                         key={entry.id}
@@ -206,9 +206,7 @@ export function History() {
                           </p>
                           {/* Copied indicator */}
                           {copiedId === entry.id && (
-                            <span className="text-[11px] text-success">
-                              {t('history.copied')}
-                            </span>
+                            <span className="text-[11px] text-success">{t('history.copied')}</span>
                           )}
                         </div>
                       </motion.div>

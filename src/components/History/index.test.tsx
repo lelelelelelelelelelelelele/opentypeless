@@ -28,7 +28,7 @@ const mockHistory = [
 ]
 
 // Mock clipboard
-const mockWriteText = vi.fn()
+const mockWriteText = vi.fn(() => Promise.resolve())
 Object.assign(navigator, {
   clipboard: {
     writeText: mockWriteText,
@@ -206,7 +206,9 @@ describe('History Component', () => {
       })
 
       // Find the Copy original button by its aria-label
-      const copyOriginalButton = screen.getByLabelText('Copy original: 嗯那个就是说我们需要清理脚本碎片')
+      const copyOriginalButton = screen.getByLabelText(
+        'Copy original: 嗯那个就是说我们需要清理脚本碎片',
+      )
       fireEvent.click(copyOriginalButton)
 
       // Should copy raw text

@@ -24,9 +24,11 @@ function CapsuleApp() {
 
   useEffect(() => {
     // Load config so DurationTimer gets the correct max_recording_seconds
-    getConfig().then(setConfig).catch((e) => {
-      console.error('Failed to load config in capsule:', e)
-    })
+    getConfig()
+      .then(setConfig)
+      .catch((e) => {
+        console.error('Failed to load config in capsule:', e)
+      })
   }, [setConfig])
 
   // Window show is handled by useCapsuleResize (setSize → setPosition → show),
