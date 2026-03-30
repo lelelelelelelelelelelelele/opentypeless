@@ -174,7 +174,9 @@ impl PipelineHandle {
         match &selected {
             Some(s) if !s.trim().is_empty() => {
                 if backup.as_deref() == Some(s.as_str()) {
-                    tracing::debug!("Selected text equals clipboard backup — Cmd+C had no effect, ignoring");
+                    tracing::debug!(
+                        "Selected text equals clipboard backup — Cmd+C had no effect, ignoring"
+                    );
                     None
                 } else {
                     Some(s.clone())
@@ -546,7 +548,8 @@ impl PipelineHandle {
                 max_tokens: 4096,
                 temperature: 0.3,
             };
-            let provider = llm::create_provider(&config.llm_provider, Some(self.shared_client.clone()));
+            let provider =
+                llm::create_provider(&config.llm_provider, Some(self.shared_client.clone()));
             Some((llm_config, provider))
         } else {
             None
@@ -767,7 +770,10 @@ impl PipelineHandle {
             "deepgram" => "https://api.deepgram.com/v1/listen".to_string(),
             "assemblyai" => "https://api.assemblyai.com/v2/transcript".to_string(),
             _ => {
-                tracing::debug!("Unknown STT provider '{}', skipping pre-warm", config.stt_provider);
+                tracing::debug!(
+                    "Unknown STT provider '{}', skipping pre-warm",
+                    config.stt_provider
+                );
                 return;
             }
         };
