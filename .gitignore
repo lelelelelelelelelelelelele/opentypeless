@@ -7,6 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+*.exe
 # Dependencies
 node_modules
 
@@ -47,3 +48,15 @@ jelly-reference*.png
 
 # Internal design docs (not for public distribution)
 docs/superpowers/
+
+
+# Process/working docs (not for PR)
+findings.md
+progress.md
+task_plan.md
+bugs.md
+AGENTS.md
+IMPROVEMENTS.md
+docs/LLM_BUG_REPRODUCTION_REPORT.md
+docs/PROMPT_VERSIONS.md
+docs/SELECTED_TEXT_EVOLUTION.md
