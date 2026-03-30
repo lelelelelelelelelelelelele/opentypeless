@@ -80,7 +80,7 @@
 > | | 服务商 | 模型 |
 > |---|---|---|
 > | 🗣️ 语音识别 | Groq | `whisper-large-v3-turbo` |
-> | 🤖 AI 润色 | Google | `gemini-2.5-flash` |
+> | 🤖 AI 润色 | Google | `gemini-3.1-flash-lite` |
 >
 > 这套组合转录速度快、准确率高，文本润色质量出色，而且两者都提供慷慨的免费额度。
 
