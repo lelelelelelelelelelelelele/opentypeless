@@ -46,7 +46,8 @@
     "getStarted": "Get Started",
     "close": "Close",
     "speakToWrite": "Speak to write — turn your voice into polished text in real time",
-    "recognitionLanguage": "Recognition Language",
+    "selectLanguage": "Choose your language",
+    "selectLanguageDesc": "Select the language for the app interface. You can change it later in Settings.",
     "allSet": "All Set",
     "startUsing": "Start using voice input",
     "hotkey": "Hotkey",
@@ -143,7 +144,8 @@
     "framework": "Framework",
     "tauriReact": "Tauri v2 + React",
     "view": "View",
-    "maxRecordingDuration": "Max Recording Duration"
+    "maxRecordingDuration": "Max Recording Duration",
+    "hideCapsuleWhenIdle": "Hide capsule when idle"
   },
   "dictionary": {
     "word": "Word",

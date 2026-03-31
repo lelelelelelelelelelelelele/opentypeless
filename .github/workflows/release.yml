@@ -36,6 +36,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Sync version from tag
+        run: |
+          TAG_VERSION="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${TAG_VERSION#v}"
+          echo "Syncing version: $VERSION"
+
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version='$VERSION';fs.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n');"
+
+          node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json','utf8'));c.version='$VERSION';fs.writeFileSync('src-tauri/tauri.conf.json',JSON.stringify(c,null,2)+'\n');"
+
+          node -e "const fs=require('fs');let c=fs.readFileSync('src-tauri/Cargo.toml','utf8');c=c.replace(/^version = \".*\"/m,'version = \"$VERSION\"');fs.writeFileSync('src-tauri/Cargo.toml',c);"
+
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
         run: |

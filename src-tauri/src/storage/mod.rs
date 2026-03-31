@@ -27,6 +27,8 @@ pub struct AppConfig {
     pub close_to_tray: bool,
     pub start_minimized: bool,
     pub max_recording_seconds: u32,
+    pub ui_language: String,
+    pub capsule_auto_hide: bool,
 }
 
 impl Default for AppConfig {
@@ -42,6 +44,9 @@ impl Default for AppConfig {
             polish_enabled: true,
             translate_enabled: false,
             target_lang: "en".to_string(),
+            #[cfg(target_os = "macos")]
+            hotkey: "Alt+/".to_string(),
+            #[cfg(not(target_os = "macos"))]
             hotkey: "Ctrl+/".to_string(),
             hotkey_mode: "hold".to_string(),
             output_mode: "keyboard".to_string(),
@@ -51,6 +56,8 @@ impl Default for AppConfig {
             close_to_tray: true,
             start_minimized: false,
             max_recording_seconds: 30,
+            ui_language: "en".to_string(),
+            capsule_auto_hide: false,
         }
     }
 }

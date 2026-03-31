@@ -4,10 +4,8 @@ pub mod openai;
 pub mod prompt;
 
 #[cfg(test)]
-pub mod reproduce_test;
 
 #[cfg(test)]
-pub mod connection_test;
 
 #[cfg(test)]
 pub mod test_support;

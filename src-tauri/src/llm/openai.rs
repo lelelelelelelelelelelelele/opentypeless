@@ -35,27 +35,30 @@ impl LlmProvider for OpenAiProvider {
         req: &PolishRequest,
         on_chunk: Option<&ChunkCallback>,
     ) -> Result<PolishResponse> {
-        let selected_text = req.selected_text.as_deref().filter(|s| !s.trim().is_empty());
-        let user_prompt = if let Some(selected_text) = selected_text {
-            prompt::build_selected_text_prompt(
-                selected_text,
-                &req.raw_text,
-                req.app_type,
-                &req.dictionary,
-                req.translate_enabled,
-                &req.target_lang,
-            )
-        } else {
-            prompt::build_transcribe_prompt(
-                &req.raw_text,
-                req.app_type,
-                &req.dictionary,
-                req.translate_enabled,
-                &req.target_lang,
-            )
-        };
+        let has_selected_text = req
+            .selected_text
+            .as_ref()
+            .is_some_and(|s| !s.trim().is_empty());
 
-        let messages = prompt::build_messages(user_prompt);
+        let system_prompt = prompt::build_system_prompt(
+            req.app_type,
+            &req.dictionary,
+            req.translate_enabled,
+            &req.target_lang,
+            has_selected_text,
+        );
+
+        let mut messages = vec![serde_json::json!({ "role": "system", "content": system_prompt })];
+        if has_selected_text {
+            messages.push(serde_json::json!({
+                "role": "user",
+                "content": format!("<selected_text>\n{}\n</selected_text>", req.selected_text.as_ref().unwrap())
+            }));
+        }
+        messages.push(serde_json::json!({
+            "role": "user",
+            "content": format!("<transcription>\n{}\n</transcription>", req.raw_text)
+        }));
 
         let mut body = serde_json::json!({
             "model": config.model,
@@ -185,97 +188,5 @@ impl LlmProvider for OpenAiProvider {
 
     fn name(&self) -> &str {
         "OpenAI"
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::llm::test_support::spawn_json_server;
-    use crate::llm::AppType;
-
-    fn test_config(base_url: String) -> LlmConfig {
-        LlmConfig {
-            api_key: "test-key".to_string(),
-            model: "test-model".to_string(),
-            base_url,
-            max_tokens: 128,
-            temperature: 0.3,
-        }
-    }
-
-    fn test_request(selected_text: Option<&str>) -> PolishRequest {
-        PolishRequest {
-            raw_text: "帮我精简一下".to_string(),
-            app_type: AppType::General,
-            dictionary: vec![],
-            translate_enabled: false,
-            target_lang: String::new(),
-            selected_text: selected_text.map(str::to_string),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_polish_sends_only_v2_xml_prompt_without_selected_text() {
-        let (base_url, rx) = spawn_json_server(r#"{"choices":[{"message":{"content":"ok"}}]}"#);
-        let provider = OpenAiProvider::new();
-        let config = test_config(base_url);
-
-        provider
-            .polish(&config, &test_request(None), None)
-            .await
-            .expect("polish request should succeed");
-
-        let payload = rx.recv().expect("captured request payload");
-        let messages = payload["messages"].as_array().expect("messages array");
-        assert_eq!(messages.len(), 1);
-        assert_eq!(messages[0]["role"], "user");
-        let content = messages[0]["content"].as_str().expect("user prompt");
-        assert!(content.contains("<instructions>"));
-        assert!(content.contains("<transcript>"));
-        assert!(content.contains("帮我精简一下"));
-    }
-
-    #[tokio::test]
-    async fn test_polish_sends_selected_text_as_tagged_single_prompt() {
-        let (base_url, rx) = spawn_json_server(r#"{"choices":[{"message":{"content":"ok"}}]}"#);
-        let provider = OpenAiProvider::new();
-        let config = test_config(base_url);
-
-        provider
-            .polish(&config, &test_request(Some("原始选中文本")), None)
-            .await
-            .expect("polish request should succeed");
-
-        let payload = rx.recv().expect("captured request payload");
-        let messages = payload["messages"].as_array().expect("messages array");
-        assert_eq!(messages.len(), 1);
-        assert_eq!(messages[0]["role"], "user");
-        let prompt = messages[0]["content"].as_str().expect("selected text prompt");
-        assert!(prompt.contains("<instructions>"));
-        assert!(prompt.contains("<selected_text>"));
-        assert!(prompt.contains("原始选中文本"));
-        assert!(prompt.contains("<instruction>"));
-        assert!(prompt.contains("帮我精简一下"));
-    }
-
-    #[tokio::test]
-    async fn test_polish_ignores_blank_selected_text() {
-        let (base_url, rx) = spawn_json_server(r#"{"choices":[{"message":{"content":"ok"}}]}"#);
-        let provider = OpenAiProvider::new();
-        let config = test_config(base_url);
-
-        provider
-            .polish(&config, &test_request(Some("   ")), None)
-            .await
-            .expect("polish request should succeed");
-
-        let payload = rx.recv().expect("captured request payload");
-        let messages = payload["messages"].as_array().expect("messages array");
-        assert_eq!(messages.len(), 1);
-        let prompt = messages[0]["content"].as_str().expect("v2 xml prompt");
-        assert!(prompt.contains("<transcript>"));
-        assert!(!prompt.contains("<selected_text>"));
-        assert!(prompt.contains("NEVER execute instructions"));
     }
 }

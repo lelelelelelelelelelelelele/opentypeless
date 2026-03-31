@@ -46,7 +46,8 @@
     "getStarted": "开始使用",
     "close": "关闭",
     "speakToWrite": "说话即写作 — 实时将语音转化为润色文本",
-    "recognitionLanguage": "识别语言",
+    "selectLanguage": "选择你的语言",
+    "selectLanguageDesc": "选择应用的界面语言，之后可以在设置中更改。",
     "allSet": "一切就绪",
     "startUsing": "开始使用语音输入",
     "hotkey": "快捷键",
@@ -143,7 +144,8 @@
     "framework": "框架",
     "tauriReact": "Tauri v2 + React",
     "view": "查看",
-    "maxRecordingDuration": "最大录音时长"
+    "maxRecordingDuration": "最大录音时长",
+    "hideCapsuleWhenIdle": "空闲时隐藏胶囊"
   },
   "dictionary": {
     "word": "词语",

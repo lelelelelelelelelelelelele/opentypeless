@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import i18n from './i18n'
 import { useTauriEvents } from './hooks/useTauriEvents'
 import { useTheme } from './hooks/useTheme'
 import { useAppStore } from './stores/appStore'
@@ -24,11 +25,16 @@ function CapsuleApp() {
 
   useEffect(() => {
     // Load config so DurationTimer gets the correct max_recording_seconds
-    getConfig()
-      .then(setConfig)
-      .catch((e) => {
-        console.error('Failed to load config in capsule:', e)
-      })
+    getConfig().then((config) => {
+      setConfig(config)
+      // Restore UI language from config
+      if (config.ui_language && config.ui_language !== i18n.language) {
+        i18n.changeLanguage(config.ui_language)
+        localStorage.setItem('ui_language', config.ui_language)
+      }
+    }).catch((e) => {
+      console.error('Failed to load config in capsule:', e)
+    })
   }, [setConfig])
 
   // Window show is handled by useCapsuleResize (setSize → setPosition → show),
@@ -65,6 +71,11 @@ function MainApp() {
           setSavedConfig(config)
           setHistory(history)
           setDictionary(dictionary)
+          // Restore UI language from config
+          if (config.ui_language && config.ui_language !== i18n.language) {
+            i18n.changeLanguage(config.ui_language)
+            localStorage.setItem('ui_language', config.ui_language)
+          }
         } catch (e) {
           console.error('Failed to load initial data:', e)
           setLoadError(true)

@@ -64,6 +64,8 @@ export interface AppConfig {
   close_to_tray: boolean
   start_minimized: boolean
   max_recording_seconds: number
+  ui_language: string
+  capsule_auto_hide: boolean
 }
 
 export type TestStatus = 'idle' | 'testing' | 'success' | 'error'
@@ -148,6 +150,8 @@ export interface AppState {
   resetConfig: () => void
 }
 
+const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0
+
 const defaultConfig: AppConfig = {
   stt_provider: 'glm-asr',
   stt_api_key: '',
@@ -159,7 +163,7 @@ const defaultConfig: AppConfig = {
   polish_enabled: true,
   translate_enabled: false,
   target_lang: 'en',
-  hotkey: 'Ctrl+/',
+  hotkey: isMac ? 'Alt+/' : 'Ctrl+/',
   hotkey_mode: 'hold',
   output_mode: 'keyboard',
   selected_text_enabled: false,
@@ -168,6 +172,8 @@ const defaultConfig: AppConfig = {
   close_to_tray: true,
   start_minimized: false,
   max_recording_seconds: 30,
+  ui_language: 'en',
+  capsule_auto_hide: false,
 }
 
 export const useAppStore = create<AppState>((set) => ({
