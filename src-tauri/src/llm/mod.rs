@@ -69,7 +69,10 @@ pub trait LlmProvider: Send + Sync {
     fn name(&self) -> &str;
 }
 
-pub fn create_provider(provider_name: &str, client: Option<reqwest::Client>) -> Box<dyn LlmProvider> {
+pub fn create_provider(
+    provider_name: &str,
+    client: Option<reqwest::Client>,
+) -> Box<dyn LlmProvider> {
     match (provider_name, client) {
         ("cloud", Some(c)) => Box::new(cloud::CloudLlmProvider::with_client(c)),
         ("cloud", None) => Box::new(cloud::CloudLlmProvider::new()),
