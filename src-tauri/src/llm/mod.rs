@@ -1,3 +1,5 @@
+pub mod anomaly_detector;
+
 pub mod cloud;
 pub mod openai;
 pub mod prompt;
@@ -75,3 +77,6 @@ pub fn create_provider(provider_name: &str, client: Option<reqwest::Client>) -> 
         (_, None) => Box::new(openai::OpenAiProvider::new()),
     }
 }
+
+#[cfg(test)]
+pub mod test_support;
